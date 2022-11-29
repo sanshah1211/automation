@@ -1,0 +1,271 @@
+---
+- hosts: openstack
+  tasks:
+  - name: "Rocky Linux 9 Image Upload"
+    openstack.cloud.image:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      name: builder
+      state: present
+      filename: /home/rocky/Rocky-9-GenericCloud.latest.x86_64.qcow2
+
+  - name: "Jenkins Flavor"
+    openstack.cloud.compute_flavor:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      disk: 30
+      name: jenkins
+      ram: 2048
+      vcpus: 2
+      state: present
+
+  - name: "Keypair creation for Jenkins Login"
+    openstack.cloud.keypair:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      name: master_key
+      public_key_file: /home/rocky/.ssh/jenkins.pub
+
+
+  - name: "External Network Creation for Builder Project"
+    openstack.cloud.network:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      name: builder_public
+      external: true
+      project: builder
+      provider_network_type: vlan
+      provider_segmentation_id: 10
+      provider_physical_network: physnet1
+
+  - name: "Subnet for External Network"
+    openstack.cloud.subnet:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      network_name: builder_public
+      name: builder_public
+      cidr: 10.10.0.0/24
+      gateway_ip: 10.10.0.1
+      enable_dhcp: yes
+
+  - name: "Private Network Creation for Builder Project"
+    openstack.cloud.network:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      name: builder_private
+      project: builder
+
+  - name: "Subnet for Private Network"
+    openstack.cloud.subnet:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      network_name: builder_private
+      name: builder_private
+      cidr: 10.1.0.0/24
+      gateway_ip: 10.1.0.1
+      enable_dhcp: yes
+  
+#  - name: "Port Assignment for VM"
+#    openstack.cloud.port:
+#      auth:
+#        auth_url: http://10.0.10.200:5000/v3
+#        username: builder
+#        password: redhat
+#        project_name: builder
+#        project_domain_name: Default
+#        user_domain_name: Default
+#      name: jenkins
+#      network: builder_private
+#      fixed_ips:
+#        - ip_address: 10.1.0.10
+
+  - name: "Router for Builder Project"
+    openstack.cloud.router:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      name: builder
+      network: builder_public
+      interfaces:
+        - net: builder_private
+          subnet: builder_private
+
+  - name: "Security Group for Jenkins VM"
+    openstack.cloud.security_group:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default  
+      name: jenkins
+      project: builder
+
+  - name: "ICMP Rules for Jenkins VM"    
+    openstack.cloud.security_group_rule:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default  
+      security_group: jenkins
+      ethertype: IPv4
+      protocol: icmp
+
+  - name: "Ingress SSH Rule for Jenkins VM"
+    openstack.cloud.security_group_rule:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default  
+      security_group: jenkins
+      ethertype: IPv4
+      protocol: tcp
+      direction: ingress
+      port_range_min: 22
+      port_range_max: 22
+
+  - name: "Ingress HTTP Rule for Jenkins VM"
+    openstack.cloud.security_group_rule:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default  
+      security_group: jenkins
+      ethertype: IPv4
+      protocol: tcp
+      direction: ingress
+      port_range_min: 80
+      port_range_max: 80
+
+  - name: "Egress Rule for Jenkins VM"
+    openstack.cloud.security_group_rule:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default  
+      security_group: jenkins
+      ethertype: IPv4
+      protocol: any
+      direction: egress
+
+  - name: "Create Volume for Jenkins VM"
+    openstack.cloud.volume:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      name: jenkins_v1
+      size: 80
+      volume_type: synelogy
+      state: present
+      wait: true
+      timeout: 180
+
+#  - name: "Floating IP Attachment for Jenkins VM"
+#    openstack.cloud.floating_ip:
+#      auth:
+#        auth_url: http://10.0.10.200:5000/v3
+#        username: builder
+#        password: redhat
+#        project_name: builder
+#        project_domain_name: Default
+#        user_domain_name: Default
+#      name: jenkins_fip
+#      network: builder_public
+#      net_destination: builder_private
+#      wait: true
+
+
+  - name: "Create Jenkins VM on Openstack"
+    openstack.cloud.server:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default  
+      name: jenkins
+      state: present
+      image: builder
+      boot_from_volume: true
+      volume_size: 80
+      flavor: jenkins
+      key_name: master_key
+      auto_ip: false
+      security_groups: jenkins
+      network: builder_private
+      wait: true
+      timeout: 300
+  
+  - name: "Floating IP Attachment for Jenkins VM"
+    openstack.cloud.floating_ip:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      server: jenkins
+      network: builder_public
+      nat_destination: builder_private
+      wait: true
+ 
+  
+  

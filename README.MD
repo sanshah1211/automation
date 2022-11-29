@@ -1,1 +1,1 @@
-# openstack stack for Kubernetes Environment
+# Openstack Heat Teamplates

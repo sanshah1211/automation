@@ -1,0 +1,72 @@
+---
+- hosts: openstack
+  tasks:
+  - name: "Create Volume for Jenkins VM"
+    openstack.cloud.volume:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      name: gitlab_v1
+      size: 80
+      volume_type: synelogy
+      state: present
+      wait: true
+      timeout: 180
+
+#  - name: "Floating IP Attachment for Jenkins VM"
+#    openstack.cloud.floating_ip:
+#      auth:
+#        auth_url: http://10.0.10.200:5000/v3
+#        username: builder
+#        password: redhat
+#        project_name: builder
+#        project_domain_name: Default
+#        user_domain_name: Default
+#      name: jenkins_fip
+#      network: builder_public
+#      net_destination: builder_private
+#      wait: true
+
+
+  - name: "Create Gitlab VM on Openstack"
+    openstack.cloud.server:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default  
+      name: jenkins
+      state: present
+      image: builder
+      boot_from_volume: true
+      volume_size: 80
+      flavor: jenkins
+      key_name: master_key
+      auto_ip: false
+      security_groups: jenkins
+      network: builder_private
+      wait: true
+      timeout: 300
+  
+  - name: "Floating IP Attachment for Jenkins VM"
+    openstack.cloud.floating_ip:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: builder
+        password: redhat
+        project_name: builder
+        project_domain_name: Default
+        user_domain_name: Default
+      server: jenkins
+      network: builder_public
+      nat_destination: builder_private
+      wait: true
+ 
+  
+  

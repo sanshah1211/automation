@@ -1,5 +1,5 @@
 ---
-- hosts: vms
+- hosts: gitlab
   become: yes
   tasks:
 #  - name: "Update system with Latest Packages"

@@ -1,7 +1,7 @@
 ---
 - hosts: openstack
   tasks:
-  - name: "Create Volume for Jenkins VM"
+  - name: "Create Volume for Gitlab VM"
     openstack.cloud.volume:
       auth:
         auth_url: http://10.0.10.200:5000/v3
@@ -41,7 +41,7 @@
         project_name: builder
         project_domain_name: Default
         user_domain_name: Default  
-      name: jenkins
+      name: gitlab
       state: present
       image: builder
       boot_from_volume: true
@@ -63,7 +63,7 @@
         project_name: builder
         project_domain_name: Default
         user_domain_name: Default
-      server: jenkins
+      server: gitlab
       network: builder_public
       nat_destination: builder_private
       wait: true

@@ -2,26 +2,26 @@
 - hosts: gitlab
   become: yes
   tasks:
-#  - name: "Update system with Latest Packages"
-#    ansible.builtin.dnf:
-#      name: "*"
-#      state: latest
-#
-#  - name: "restart system to reboot to newest kernel"
-#    shell: "sleep 5 && reboot"
-#    async: 1
-#    poll: 0
-#
-#  - name: "wait for 10 seconds"
-#    pause:
-#      seconds: 10
-#
-#  - name: "wait for the system to reboot"
-#    wait_for_connection:
-#      connect_timeout: 20
-#      sleep: 5
-#      delay: 5
-#      timeout: 60
+  - name: "Update system with Latest Packages"
+    ansible.builtin.dnf:
+      name: "*"
+      state: latest
+
+  - name: "restart system to reboot to newest kernel"
+    shell: "sleep 5 && reboot"
+    async: 1
+    poll: 0
+
+  - name: "wait for 10 seconds"
+    pause:
+      seconds: 10
+
+  - name: "wait for the system to reboot"
+    wait_for_connection:
+      connect_timeout: 20
+      sleep: 5
+      delay: 5
+      timeout: 60
 
   - name: "Server List"
     ansible.builtin.ping:
@@ -31,67 +31,78 @@
     debug:
       msg: "{{ ping_output }}"
   
-#  - name: "Check Uptime"
-#    ansible.builtin.command:
-#      cmd: uptime 
-#    register: uptime_output 
-#
-#  - name: "Uptime Output"
-#    debug:
-#      var: uptime_output.stdout 
-#
-#  - name: Install Jenkins
-#    ansible.builtin.dnf:
-#      name:
-#        - java-11-openjdk 
-#        - java-11-openjdk-devel
-#      state: present
-#
-#  - name: "Java Version"
-#    ansible.builtin.command:
-#      cmd: java --version
-#    register: java_check
-#
-#  - name: "Java Version Check"
-#    debug:
-#      var: java_check.stdout
-#  
-#  - name: "Download Jenkins Repo and Install Key"
-#    ansible.builtin.get_url:
-#      url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
-#      dest: /etc/yum.repos.d/jenkins.repo
-# 
+  - name: "Check Uptime"
+    ansible.builtin.command:
+      cmd: uptime 
+    register: uptime_output 
+
+  - name: "Uptime Output"
+    debug:
+      var: uptime_output.stdout 
+
+  - name: "Install Gitlab"
+    ansible.builtin.dnf:
+      name:
+        - curl 
+        - vim 
+        - policycoreutils 
+        - python3-policycoreutils 
+        - git
+      state: present
+
+  - name: "Installation Prereq"
+    ansible.builtin.command:
+      cmd: "yum list curl vim policycoreutils python3-policycoreutils git"
+    register: package_verification
+
+  - name: "Package Verification"
+    debug:
+      var: package_verification.stdout
+  
+  - name: "Git Lab CE Repository Creation"
+    ansible.builtin.blockinfile:
+      block: |
+        [gitlab_gitlab-ce]
+        name=gitlab_gitlab-ce
+        baseurl=https://packages.gitlab.com/gitlab/gitlab-ce/el/8/$basearch
+        repo_gpgcheck=1
+        gpgcheck=1
+        enabled=1
+        gpgkey=https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey
+               https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey/gitlab-gitlab-ce-3D645A26AB9FBD22.pub.gpg
+        sslverify=1
+        sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+        metadata_expire=300
+
+        [gitlab_gitlab-ce-source]
+        name=gitlab_gitlab-ce-source
+        baseurl=https://packages.gitlab.com/gitlab/gitlab-ce/el/8/SRPMS
+        repo_gpgcheck=1
+        gpgcheck=1
+        enabled=1
+        gpgkey=https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey
+               https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey/gitlab-gitlab-ce-3D645A26AB9FBD22.pub.gpg
+        sslverify=1
+        sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+        metadata_expire=300
+      path: /etc/yum.repos.d/gitlab.repo
+      create: true
+       
 #  - name: "Import Jenkins Key"
 #    ansible.builtin.rpm_key:
 #      state: present
 #      key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
 #
 #
-#  - name: "Install Jenkins Package"
-#    ansible.builtin.dnf:
-#      name: 
-#        - epel-release
-#        - jenkins
-#      state: latest
-#    register: package_installation
-#
-#  - name: "Verify Package Installation"
-#    debug:
-#      var:  package_installation
-#
-#  - name: "Start/Enable Jenkins Service and Verify"
-#    ansible.builtin.systemd:
-#      name: jenkins 
-#      state: started
-#      enabled: yes
-#
-#  - name: "Verify if Jenkins service is started and enabled or not"
-#    ansible.builtin.command:
-#      cmd: systemctl status jenkins
-#    register: service_verification
-#    
-#  - name: "Systemctl Status Logs of Verification"   
-#    debug:
-#      var: service_verification
+  - name: "Install Jenkins Package"
+    ansible.builtin.dnf:
+      name: gitlab-ce
+      state: latest
+    register: package_installation
+
+  - name: "Verify Package Installation"
+    debug:
+      var:  package_installation
+
 
       

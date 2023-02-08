@@ -1,24 +1,24 @@
 ---
-- hosts: vms
+- hosts: deployment_host
   become: yes
   tasks:
-  - name: "Server List"
-    ansible.builtin.ping:
-    register: ping_output
-
-  - name: "Ping Output"
-    debug:
-      msg: "{{ ping_output }}"
-  
-  - name: "Check Uptime"
-    ansible.builtin.command:
-      cmd: uptime 
-    register: uptime_output 
-
-  - name: "Uptime Output"
-    debug:
-      var: uptime_output.stdout 
-
+#  - name: "Server List"
+#    ansible.builtin.ping:
+#    register: ping_output
+#
+#  - name: "Ping Output"
+#    debug:
+#      msg: "{{ ping_output }}"
+#  
+#  - name: "Check Uptime"
+#    ansible.builtin.command:
+#      cmd: uptime 
+#    register: uptime_output 
+#
+#  - name: "Uptime Output"
+#    debug:
+#      var: uptime_output.stdout 
+#
   - name: Install Jenkins
     ansible.builtin.dnf:
       name:

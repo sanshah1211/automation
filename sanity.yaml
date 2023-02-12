@@ -1,0 +1,19 @@
+---
+- hosts: deployment_host
+  gather_facts: true
+  become: yes
+  tasks:
+  - name: "List the stack just to verify connectivity"
+    openstack.cloud.stack_info:
+      auth:
+        auth_url: http://10.0.10.200:5000/v3
+        username: admin
+        password: gOCxId4198Fp2sWIOSQnFHlLtpsAwc2GWqiuBCnU
+        project_name: admin
+        project_domain_name: Default
+        user_domain_name: Default
+    register: result
+
+  - name: "Print Stack List"
+    debug:
+      msg: "{{ result }}"

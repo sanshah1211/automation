@@ -1,19 +1,19 @@
 ---
 - hosts: deployment_host
-  gather_facts: true
-  become: yes
   tasks:
-  - name: "List the stack just to verify connectivity"
-    openstack.cloud.stack_info:
-      auth:
-        auth_url: http://10.0.10.200:5000/v3
-        username: admin
-        password: gOCxId4198Fp2sWIOSQnFHlLtpsAwc2GWqiuBCnU
-        project_name: admin
-        project_domain_name: Default
-        user_domain_name: Default
-    register: result
+  - name: "Authenitcate with Openstack Cloud Kolla Ansible"
+    openstack.cloud.auth:
+      cloud: kolla-admin
 
-  - name: "Print Stack List"
+  - name: "Openstack Image Creation only if Image is not Present"
+    openstack.cloud.image:
+      cloud: kolla-admin
+      name: sanity-1
+      container_format: bare
+      disk_format: raw
+      filename: /mnt/template/qcow2/cirros-0.6.1-aarch64-disk.raw
+    register: image_info
+
+  - name: "Image Result"
     debug:
-      msg: "{{ result }}"
+      msg: "{{ image_info.images:wq }}" 

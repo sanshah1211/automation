@@ -1,0 +1,7 @@
+---
+- name: "Glance Sanity Testing for Openstack Cloud"
+  hosts: deployment_host
+  
+  roles:
+    - role: image
+      sanity_image: sanity-2

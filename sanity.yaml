@@ -1,19 +1,29 @@
 ---
 - hosts: deployment_host
   tasks:
-  - name: "Authenitcate with Openstack Cloud Kolla Ansible"
-    openstack.cloud.auth:
-      cloud: kolla-admin
+  - name: "List Openstack Images"
+    shell: source ./admin-openrc.sh; openstack image list -c 'Name'
+    register: image_list
+    
+  - name: "Delete Sanity Image and Recreate It"
+    shell: source ./admin-openrc.sh; openstack image delete sanity-2
+    when: "'sanity-2' in image_list.stdout"
 
-  - name: "Openstack Image Creation only if Image is not Present"
-    openstack.cloud.image:
-      cloud: kolla-admin
-      name: sanity-1
-      container_format: bare
-      disk_format: raw
-      filename: /mnt/template/qcow2/cirros-0.6.1-aarch64-disk.raw
-    register: image_info
+  - name: "Create Openstack Sanity Image"
+    shell: source ./admin-openrc.sh; openstack image create --container-format bare --disk-format raw --file /mnt/template/qcow2/cirros-0.6.1-aarch64-disk.raw sanity-2
+    when: "'sanity-2' not in image_list.stdout"
 
-  - name: "Image Result"
+  - name: "Wait until image is being uploaded"
+    shell: source ./admin-openrc.sh;  openstack image show -c status -f value sanity-2
+    register: image_upload_progress
+    until: image_upload_progress.stdout is search("active")
+    retries: 10
+    delay: 10
+
+  - name: "Justification for Task Failure"
     debug:
-      msg: "{{ image_info.images:wq }}" 
+      msg: "Image sanity-2 is successfully uploaded"
+    when: image_upload_progress.stdout is search("error")
+
+
+

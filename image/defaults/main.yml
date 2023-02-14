@@ -1,0 +1,6 @@
+---
+# defaults file for image
+# Here we are going to define variables for sanity
+# images.
+#
+sanity_image: sanity-2

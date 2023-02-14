@@ -1,0 +1,41 @@
+---
+# tasks file for image
+# In this tasks we are going to create and delete
+# sanity images for kolla-admin cloud just to check
+# if image functionality is operating normally.
+- name: "Retrieve Available Image List"
+  shell: source /var/lib/jenkins/workspace/admin-openrc.sh; openstack image list -c 'Name'
+  register: image_list
+
+- name: "Listing Image from Openstack Cloud"
+  debug:
+    msg: "{{ image_list.stdout }}" 
+
+- name: "Delete Existing Sanity Image"
+  shell: source /var/lib/jenkins/workspace/admin-openrc.sh; openstack image delete sanity-2
+  when: "'sanity-2' in image_list.stdout"
+
+- name: "Show Images"
+  debug:
+    msg: "{{ image_list.stdout }}"
+
+- name: "Pause Task until the image deletion is happening"
+  pause:
+    minutes: 2
+
+- name: "Create sanity image if not exist"
+  shell: source /var/lib/jenkins/workspace/admin-openrc.sh; openstack image create --container-format bare --disk-format raw --file /mnt/template/qcow2/cirros-0.6.1-aarch64-disk.raw sanity-2
+  when: "'sanity-2' not in image_list.stdout"
+    
+- name: "Wait until image is being uploaded"
+  shell: source ./admin-openrc.sh;  openstack image show -c status -f value sanity-2
+  register: image_upload_progress
+  until: image_upload_progress.stdout is search("active")
+  retries: 10
+  delay: 10
+
+- name: "Show current Status of Images"
+  debug: 
+    msg: "Either 'sanity_image' is not present or it is in ERROR state, hence failing"
+  failed_when: ("'sanity-2' not in image_list.stdout") or (image_upload_progress.stdout is search("error"))
+

@@ -1,3 +1,7 @@
 [deployment_host]
+<<<<<<< HEAD
 10.0.10.199                ansible_user=stack        ansible_ssh_private_key_file=/home/stack/.ssh/id_rsa
 #10.0.10.199
+=======
+10.0.10.199                ansible_user=rocky        ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/id_rsa
+>>>>>>> 4f781567583102e03bd43bda92b4584a34f107e8

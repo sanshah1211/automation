@@ -1,5 +1,5 @@
 ---
-- hosts: deployment_host
+- hosts: automation
   become: yes
   tasks:
 #  - name: "Server List"
